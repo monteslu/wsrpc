@@ -1,32 +1,16 @@
 define([
 
-], function(){
+], function(lang){
 
-  var getSMD = function(){
-    var smd = {
-      target:"/jsonrpc", // this defines the URL to connect for the services
-      transport:"POST", // We will use POST as the transport
-      envelope:"JSON-RPC-1.0", // We will use JSON-RPC
-      SMDVersion:"2.0",
-      services: {}
-    };
-
-    for(var func in rpcFunctions){
-      smd.services[func] = {};
-    }
-    return smd;
-  };
-
-  var WsRpc = function(){
-    this.rpcFunctions = {};
-    this.listen = function(io){
+  var WsRpc = {
+    functions : {},
+    listen : function(io){
+      //var rpcLib = this; //socket.io events change scope in callbacks
       io.sockets.on('connection', function (socket) {
-
-        console.log('newsocket',socket);
 
         socket.on('rpc',function(rpc){
           console.log('rpc obj: ',rpc);
-          if(this.rpcFunctions[rpc.method]){
+          if(WsRpc.functions[rpc.method]){
             var retVal;
             var error;
             try{
@@ -37,11 +21,11 @@ define([
                   params.push(rpc.params[i]);
                 }
               }
-              this.rpcFunctions[rpc.method].apply({
-                resultCB: function(result){
+              WsRpc.functions[rpc.method].apply({
+                respond: function(result){
                   socket.emit('rpc',{result: result, error: null, id: rpc.id});
                 },
-                errorCB: function(error){
+                error: function(error){
                   socket.emit('rpc',{result: null, error: error, id: rpc.id});
                 },
                 socket: socket
@@ -57,12 +41,24 @@ define([
         });
 
         socket.on('smd',function(rpc){
-          socket.emit('smd',getSMD());
+          var smd = {
+            target:"/jsonrpc", // this defines the URL to connect for the services
+            transport:"POST", // We will use POST as the transport
+            envelope:"JSON-RPC-1.0", // We will use JSON-RPC
+            SMDVersion:"2.0",
+            services: {}
+          };
+
+          for(var func in WsRpc.functions){
+            smd.services[func] = {};
+          }
+          socket.emit('smd',smd);
         });
 
       });
 
-    };
+      return this;
+    }
   };
 
   return WsRpc;

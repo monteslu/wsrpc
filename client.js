@@ -3,6 +3,8 @@ define([
   'dojo/_base/Deferred'
 ], function(lang, Deferred){
 
+  console.log('loading rpc client code.');
+
   var _callNum = 0;
   var _deferreds = {};
 
@@ -28,7 +30,7 @@ define([
     };
   };
 
-  return function(sock){
+  function client(sock){
       this.socket = sock;
 
       // Make sure we have a socket with send/emit and on
@@ -86,12 +88,13 @@ define([
       });
 
 
-
       // Register the smd handler, then tell the server to send it
       this.socket.on('smd', smdHandler).emit('smd',{});
 
       // Register handler for any rpc repsonses from service
       this.socket.on('rpc', rpcCallback);
-    };
+    }
+
+    return client;
 
 });
