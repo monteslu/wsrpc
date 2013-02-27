@@ -3,8 +3,6 @@ define([
   'dojo/_base/Deferred'
 ], function(lang, Deferred){
 
-  console.log('loading rpc client code.');
-
   var _callNum = 0;
   var _deferreds = {};
 
