@@ -2,6 +2,10 @@
 
 JSON-RPC via websockets
 
+## RAWR-PC
+
+![RAWR-PC](https://rawgithub.com/phated/badart/master/reptar_rawr.jpg)
+
 ## Installation
 
 `volo add iceddev/reptar`
