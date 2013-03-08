@@ -1,0 +1,18 @@
+{
+  "name": "reptar",
+  "description": "json-rpc over websockets",
+  "version": "0.1.0",
+  "repository": {
+    "url": "git://github.com/iceddev/reptar.git"
+  },
+  "dependencies": {
+    "when": "~1.8.1",
+    "meld": "~1.2.0"
+  },
+  "volo": {
+    "dependencies": {
+      "meld": "github:cujojs/meld/1.2.0",
+      "when": "github:cujojs/when/1.8.1"
+    }
+  }
+}

@@ -1,98 +1,98 @@
-define([
-  'dojo/_base/lang',
-  'dojo/_base/Deferred'
-], function(lang, Deferred){
+(function(factory){
+  /*jshint strict:false */
+  if(typeof define != "undefined"){
+    define(['when'], factory);
+  }else if(typeof module != "undefined"){
+    module.exports = factory(require('when'));
+  }else{
+    Nodoze = factory();
+  }
+})(function(when){
 
-  var _callNum = 0;
-  var _deferreds = {};
+  'use strict';
 
-  var createRpcFunction = function(functionName, socket){
-    return function(){
-      var params = [],
-        rpcObject,
-        deferred;
-      _callNum++;
-      for (var i = 0; i < arguments.length; i++) {
-        params.push(arguments[i]);
-      }
-      rpcObject = {
-        method: functionName,
-        params: params,
-        id: _callNum
-      };
-      deferred = new Deferred();
-      deferred.callNum = _callNum;
-      _deferreds[_callNum] = deferred;
-      socket.emit('rpc', rpcObject);
-      return deferred;
-    };
-  };
-
-  function client(sock){
-      this.socket = sock;
-
-      // Make sure we have a socket with send/emit and on
-      if(!this.socket || !this.socket.on || (!this.socket.send || !this.socket.emit)){
-        return console.warn('Must pass in a socket or an object with a socket property to this cosntructor. ex: {socket : mySocket}');
-      }
-      this.socket.emit = this.socket.emit || this.socket.send;
-
-      this._readyDef = new Deferred();
-      this._notificationHanlders = {};
-      this.methods = {};
-
-      this.addNotificationHandler = function(methodName, handlerFunction){
-        this._notificationHanlders[methodName] = handlerFunction;
-      };
-
-      this.ready = function(readyHandler){
-        this._readyDef.then(readyHandler);
-      };
-
-
-      // Make sure to hitch this because hitch is amazing -- and solves all your problems
-      var smdHandler = lang.hitch(this, function(smdDefinition){
-        if(smdDefinition && smdDefinition.services){
-          for(var service in smdDefinition.services){
-            this.methods[service] = createRpcFunction(service, this.socket);
-          }
-        }
-
-        this._readyDef.callback();
-
-      });
-
-      var rpcCallback = lang.hitch(this, function(rpcObject){
-        try{
-          var id = rpcObject.id;
-          if(id){
-            if(_deferreds[id]){
-              if(rpcObject.error){
-                _deferreds[id].errback(rpcObject.error);
-              } else {
-                _deferreds[id].callback(rpcObject.result);
-              }
-              delete _deferreds[id];
-            }
-          }else{
-            if(this.notificationHanlders[rpcObject.method]){
-              this.notificationHanlders[rpcObject.method]();
-            }
-          }
-
-        } catch(e){
-          console.log('malformed rpc response', rpcObject, e);
-        }
-      });
-
-
-      // Register the smd handler, then tell the server to send it
-      this.socket.on('smd', smdHandler).emit('smd',{});
-
-      // Register handler for any rpc repsonses from service
-      this.socket.on('rpc', rpcCallback);
+  function Client(socket){
+    // Make sure we have a socket with send and on
+    if(!(socket && (socket.on || socket.hasOwnProperty('onmessage')) && socket.send)){
+      return console.warn('Must pass in a socket or an object with a socket property to this cosntructor. ex: {socket : mySocket}');
     }
 
-    return client;
+    var self = this;
+    var defer = when.defer();
+    this.promise = defer.promise;
+    this.then = defer.promise.then;
+    this.socket = socket;
+    this.methods = {};
+
+    var _callNum = 0;
+    var _deferreds = {};
+
+    function generateRpc(name, socket){
+      return function(){
+        var deferred = when.defer();
+        _deferreds[++_callNum] = deferred;
+        socket.send(JSON.stringify({
+          method: name,
+          params: Array.prototype.slice.call(arguments),
+          id: _callNum
+        }));
+        return deferred.promise;
+      };
+    }
+
+    // TODO: implement notifications
+
+    function smdHandler(smd){
+      if(!(smd && smd.services)){
+        return defer.reject('Malformed SMD - missing services');
+      }
+
+      for(var service in smd.services){
+        self.methods[service] = generateRpc(service, self.socket);
+      }
+
+      return defer.resolve(self.methods);
+    }
+
+    function rpcHandler(rpc){
+      if(!(rpc.id && (rpc.error || rpc.result))){
+        return;
+      }
+
+      var id = rpc.id;
+      if(_deferreds[id]){
+        var defer = _deferreds[id];
+        if(rpc.error){
+          defer.reject(rpc.error);
+        } else {
+          defer.resolve(rpc.result);
+        }
+        delete _deferreds[id];
+      }
+    }
+
+      function handleMessage(data){
+        if(data.smd){
+          smdHandler(data.smd);
+        } else {
+          rpcHandler(data);
+        }
+      }
+
+      if(!this.socket.on){
+        this.socket.addEventListener('message', function(evt){
+          data = JSON.parse(evt.data);
+          handleMessage(data);
+        });
+      } else {
+        this.socket.on('message', function(data){
+          data = JSON.parse(data);
+          handleMessage(data);
+        });
+      }
+
+    }
+
+    return Client;
 
 });
