@@ -1,31 +1,3 @@
-# RePtar(C)
-
-JSON-RPC via websockets
-
-## Installation
-
-`volo add iceddev/reptar`
-
-`npm install reptar`
-
-## Require
-
-```javascript
-// Server
-require(['reptar/server'], function(Reptar){});
-// Client
-require(['reptar/client'], function(Reptar){});
-```
-
-```javascript
-// Server
-var Reptar = require('reptar/server');
-// Client
-var Reptar = require('reptar/client');
-```
-
-## License
-
 The MIT License (MIT)
 
 Copyright (c) 2013 Iced Development, LLC
