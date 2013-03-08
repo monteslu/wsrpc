@@ -11,7 +11,7 @@
 
   'use strict';
 
-  function Client(socket){
+  function Rawr(socket){
     // Make sure we have a socket with send and on
     if(!(socket && (socket.on || socket.hasOwnProperty('onmessage')) && socket.send)){
       return console.warn('Must pass in a socket or an object with a socket property to this cosntructor. ex: {socket : mySocket}');
@@ -93,6 +93,6 @@
 
     }
 
-    return Client;
+    return Rawr;
 
 });

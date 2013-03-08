@@ -1,31 +1,29 @@
-# RePtar(C)
+# rawr (a.k.a. RAWRpc)
 
 JSON-RPC via websockets
 
-## RAWR-PC
-
-![RAWR-PC](https://rawgithub.com/phated/badart/master/reptar_rawr.jpg)
+![RAWRpc](https://rawgithub.com/phated/badart/master/reptar_rawr.jpg)
 
 ## Installation
 
-`volo add iceddev/reptar`
+`volo add iceddev/rawr`
 
-`npm install reptar`
+`npm install rawr`
 
 ## Require
 
 ```javascript
 // Server
-require(['reptar/server'], function(Reptar){});
+require(['rawr/server'], function(Rawr){});
 // Client
-require(['reptar/client'], function(Reptar){});
+require(['rawr/client'], function(Rawr){});
 ```
 
 ```javascript
 // Server
-var Reptar = require('reptar/server');
+var Rawr = require('rawr/server');
 // Client
-var Reptar = require('reptar/client');
+var Rawr = require('rawr/client');
 ```
 
 ## License

@@ -11,10 +11,10 @@
 
   'use strict';
 
-  function Nodoze(server, funcs){
+  function Rawr(server, funcs){
     var sockets = server.sockets ? server.sockets : server;
 
-    this.functions = funcs || Nodoze.prototype.functions;
+    this.functions = funcs || Rawr.prototype.functions;
 
     var self = this;
 
@@ -70,9 +70,9 @@
     return this;
   }
 
-  Nodoze.prototype.functions = {};
+  Rawr.prototype.functions = {};
 
-  Nodoze.prototype.smd = {
+  Rawr.prototype.smd = {
     target:"/jsonrpc", // this defines the URL to connect for the services
     transport:"POST", // We will use POST as the transport
     envelope:"JSON-RPC-1.0", // We will use JSON-RPC
@@ -80,6 +80,6 @@
     services: {}
   };
 
-  return Nodoze;
+  return Rawr;
 
 });
