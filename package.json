@@ -2,7 +2,7 @@
   "name": "rawr",
   "version": "0.1.0",
   "description": "JSON-RPC over WebSockets",
-  "main": "server.js",
+  "main": "rawr.js",
   "dependencies": {
     "when": "~2.7.1"
   },
