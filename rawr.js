@@ -10,7 +10,7 @@
     // test if we are in node
     if(process && process.versions && process.versions.node){
       // build tools only parse require with strings, not variables
-      moduleId = './server';
+      var moduleId = './server';
       return require(moduleId);
     }
 
