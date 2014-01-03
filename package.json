@@ -1,41 +1,33 @@
 {
   "name": "rawr",
-  "description": "json-rpc over websockets",
   "version": "0.1.0",
-  "homepage": "https://github.com/iceddev/rawr",
-  "author": {
-    "name": "Iced Dev",
-    "email": "info@iceddev.com",
-    "url": "iceddev.com"
+  "description": "JSON-RPC over WebSockets",
+  "main": "server.js",
+  "dependencies": {
+    "when": "~2.7.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/iceddev/rawr.git"
-  },
-  "bugs": {
-    "url": "https://github.com/iceddev/rawr/issues"
-  },
-  "licenses": [
-    {
-      "type": "MIT",
-      "url": "https://github.com/iceddev/rawr/blob/master/LICENSE"
-    }
-  ],
-  "dependencies": {
-    "when": "~1.8.1",
-    "meld": "~1.2.0"
-  },
-  "volo": {
-    "dependencies": {
-      "meld": "github:cujojs/meld/1.2.0",
-      "when": "github:cujojs/when/1.8.1"
-    }
+    "url": "git://github.com/iceddev/rawr"
   },
   "keywords": [
     "rpc",
     "json-rpc",
+    "promises",
     "websocket",
-    "promise",
-    "deferred"
-  ]
+    "ws",
+    "promise"
+  ],
+  "author": "Blaine Bublitz <blaine@iceddev.com> (http://iceddev.com/)",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "gitHead": "8980a386c203f47b2bba6a108ff968f2ec88ada6",
+  "bugs": {
+    "url": "https://github.com/iceddev/rawr/issues"
+  }
 }
