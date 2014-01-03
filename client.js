@@ -81,7 +81,7 @@
 
       if(!this.socket.on){
         this.socket.addEventListener('message', function(evt){
-          data = JSON.parse(evt.data);
+          var data = JSON.parse(evt.data);
           handleMessage(data);
         });
       } else {
