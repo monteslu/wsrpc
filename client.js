@@ -5,7 +5,7 @@
   }else if(typeof module != "undefined"){
     module.exports = factory(require('when'));
   }else{
-    Nodoze = factory();
+    Rawr = factory();
   }
 })(function(when){
 

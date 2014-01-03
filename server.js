@@ -5,7 +5,7 @@
   }else if(typeof module != "undefined"){
     module.exports = factory(require('meld'));
   }else{
-    Nodoze = factory();
+    Rawr = factory();
   }
 })(function(meld){
 
