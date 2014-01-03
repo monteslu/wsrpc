@@ -13,8 +13,9 @@
 
       var self = this;
       var defer = when.defer();
-      this.promise = defer.promise;
-      this.then = defer.promise.then;
+      this.then = function(onSuccess, onError){
+        return defer.promise.then(onSuccess, onError);
+      };
       this.socket = socket;
       this.methods = {};
 
