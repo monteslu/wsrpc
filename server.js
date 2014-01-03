@@ -1,13 +1,13 @@
 (function(factory){
   /*jshint strict:false */
   if(typeof define != "undefined"){
-    define(['meld'], factory);
+    define(['when/function'], factory);
   }else if(typeof module != "undefined"){
-    module.exports = factory(require('meld'));
+    module.exports = factory(require('when/function'));
   }else{
     Rawr = factory();
   }
-})(function(meld){
+})(function(whenfn){
 
   'use strict';
 
@@ -26,41 +26,32 @@
       }
       socket.send(JSON.stringify({smd: self.smd}));
 
-      function rpcEmit(result, error, id){
-        socket.send(JSON.stringify({
-          result: result,
-          error: error,
-          id: id
-        }));
-      }
-
       // On rpc call, execute the function
       socket.on('message', function(data){
+        function onSuccess(result){
+          socket.send(JSON.stringify({
+            result: result,
+            error: null,
+            id: data.id
+          }));
+        }
+
+        function onError(error){
+          error = error.message || error;
+          console.log(error);
+          socket.send(JSON.stringify({
+            result: null,
+            error: error,
+            id: data.id
+          }));
+        }
+
         data = JSON.parse(data);
 
         if(self.functions[data.method]){
-          var func = meld.afterReturning(self.functions[data.method], function(result){
-            if(!result){
-              return;
-            }
-
-            if(result && typeof result.then === 'function'){
-              result.then(function(success){
-                rpcEmit(success, null, data.id);
-              }, function(error){
-                rpcEmit(null, error, data.id);
-              });
-            } else {
-              if(result.error){
-                rpcEmit(null, result.error, data.id);
-              } else {
-                rpcEmit(result.result || result, null, data.id);
-              }
-            }
-          });
-          func.apply(null, data.params);
+          whenfn.apply(self.functions[data.method], data.params).then(onSuccess, onError);
         } else {
-          rpcEmit(null, 'method undefined', data.id);
+          onError('method undefined');
         }
 
       });
