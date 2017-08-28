@@ -42,7 +42,7 @@ client.rpc('talk', 'luis')
 ## Making an RPC server
 
 ```javascript
-var server = createClient({
+var server = createServer({
   sendEmitter : anEventEmitter,
   sendTopic : 'rpcResponse', // the opposite of client
   receiveEmitter : anEventEmitter,
