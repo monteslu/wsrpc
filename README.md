@@ -1,47 +1,59 @@
 # rawr (a.k.a. RAWRpc)
 
-JSON-RPC via websockets
+[![NPM](https://nodei.co/npm/rawr.png?compact=true)](https://nodei.co/npm/rawr/)
+
+[![Build Status](https://travis-ci.org/iceddev/rawr.svg?branch=master)](https://travis-ci.org/iceddev/rawr) [![Coverage Status](https://coveralls.io/repos/iceddev/rawr/badge.svg?branch=master)](https://coveralls.io/r/iceddev/rawr?branch=master)
+
+
+
+Remote Procedure Calls ([JSON-RPC](http://json-rpc.org/wiki/specification)) sent over any [EventEmitter](https://nodejs.org/dist/latest-v8.x/docs/api/events.html#events_class_eventemitter) transport.
 
 ![RAWRpc](https://rawgithub.com/phated/badart/master/reptar_rawr.jpg)
 
-## Installation
 
-`volo add iceddev/rawr`
+
+
+## Installation
 
 `npm install rawr`
 
-## Require
+## Using the RPC client
 
 ```javascript
-// Server
-require(['rawr'], function(Rawr){
-  // in node, this will be rawr/server
+var createClient = require('rawr/client');
+
+var client = createClient({
+  sendEmitter : anEventEmitter,
+  sendTopic : 'rpcCall',
+  receiveEmitter : anEventEmitter,
+  receiveTopic : 'rpcResponse',
+  timeout: 5000 // timeout the call after 5 seconds, default is 10
 });
 
-// Client
-require(['rawr'], function(Rawr){
-  // in the browser, this will be rawr/client
-});
+// call an rpc method with a parameter and get a promise:
+client.rpc('talk', 'luis')
+  .then(function(result) {
+    console.log(result); // prints 'hello, luis'
+  });
+
 ```
+
+
+## Making an RPC server
 
 ```javascript
-// Server
-var Rawr = require('rawr/server');
-// in node, this will be rawr/server
+var server = createClient({
+  sendEmitter : anEventEmitter,
+  sendTopic : 'rpcResponse', // the opposite of client
+  receiveEmitter : anEventEmitter,
+  receiveTopic : 'rpcCall' // the opposite of the client
+});
 
-// Client
-var Rawr = require('rawr/client');
-// in the browser, this will be rawr/client
+function talkToMe(name) {
+  // could return a value, a promise, or throw an error
+  return 'hello, ' + name;
+}
+
+server.addMethod('talk', talkToMe);
+
 ```
-
-## License
-
-The MIT License (MIT)
-
-Copyright (c) 2013-2014 Iced Development, LLC
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

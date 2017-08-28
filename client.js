@@ -1,104 +1,61 @@
-(function(define){
-  'use strict';
+var events = require('events');
+var base64 = require("base64-url");
+var uuidV4 = require('uuid/v4');
 
-  define(function(require){
+function generateId() {
+  var id = uuidV4();
+  id = new Buffer(id.replace(/\-/g, ''), 'hex');
+  return base64.encode(id);
+}
 
-    var when = require('when');
+function createClient(options) {
+  var pendingCalls = {};
+  var sendEmitter = options.sendEmitter;
+  var sendTopic = options.sendTopic || 'rpcCall';
+  var receiveEmitter = options.receiveEmitter || sendEmitter;
+  var receiveTopic = options.receiveTopic || 'rpcResult';
+  var timeout = options.timeout || 10000;
 
-    function Rawr(socket){
-
-      var self = this;
-
-      var rejecter, resolver;
-      self.promise = when.promise(function(resolve, reject, notify) {
-        resolver = resolve;
-        rejecter = reject;
-      });
-
-      // Make sure we have a socket with send and on
-      if(!(socket && socket.send)){
-        return rejecter('Must pass in a socket or an object with a socket property to this cosntructor. ex: {socket : mySocket}');
+  receiveEmitter.on(receiveTopic, function(msg) {
+    var promise = pendingCalls[msg.id];
+    if(promise) {
+      clearTimeout(promise.timeoutId);
+      delete pendingCalls[msg.id];
+      if (msg.error) {
+        promise.reject(msg.error);
       }
-
-
-      self.socket = socket;
-      self.methods = {};
-
-      var _callNum = 0;
-      var _deferreds = {};
-
-      function generateRpc(name, socket){
-        return function(){
-          var deferred = when.defer();
-          _deferreds[++_callNum] = deferred;
-          socket.send(JSON.stringify({
-            method: name,
-            params: Array.prototype.slice.call(arguments),
-            id: _callNum
-          }));
-          return deferred.promise;
-        };
+      else {
+        promise.resolve(msg.result);
       }
-
-      // TODO: implement notifications
-
-      function smdHandler(smd){
-
-        if(!(smd && smd.services)){
-          return rejecter('Malformed SMD - missing services');
-        }
-
-        for(var service in smd.services){
-          self.methods[service] = generateRpc(service, self.socket);
-        }
-
-        return resolver(self.methods);
-      }
-
-      function rpcHandler(rpc){
-        if(!(rpc.id && (rpc.error || rpc.result))){
-          return;
-        }
-
-        var id = rpc.id;
-        if(_deferreds[id]){
-          var defer = _deferreds[id];
-          if(rpc.error){
-            defer.reject(rpc.error);
-          } else {
-            defer.resolve(rpc.result);
-          }
-          delete _deferreds[id];
-        }
-      }
-
-      function handleMessage(data){
-        if(data.smd){
-          smdHandler(data.smd);
-        } else {
-          rpcHandler(data);
-        }
-      }
-
-      if(!this.socket.on){
-        this.socket.addEventListener('message', function(evt){
-          var data = JSON.parse(evt.data);
-          handleMessage(data);
-        });
-      } else {
-        this.socket.on('message', function(data){
-          data = JSON.parse(data);
-          handleMessage(data);
-        });
-      }
-
     }
-
-    return Rawr;
-
   });
 
-}(
-  typeof define === 'function' && define.amd ? define : function (factory) { module.exports = factory(require); }
-  // Boilerplate for AMD and Node
-));
+  function rpc(method) {
+    var id = generateId();
+    var msg = {
+      method: method,
+      params: Array.prototype.slice.call(arguments, 1, arguments.length),
+      id: id
+    };
+
+    var timeoutId = setTimeout(function() {
+      if(pendingCalls[id]) {
+        pendingCalls[id].reject('Timeout');
+        delete pendingCalls[id];
+      }
+    }, timeout);
+
+    var response = new Promise(function(resolve, reject) {
+      pendingCalls[id] = { resolve: resolve, reject: reject, timeoutId: timeoutId };
+    });
+
+    sendEmitter.emit(sendTopic, msg);
+
+    return response;
+  }
+
+  return { rpc: rpc };
+
+}
+
+module.exports = createClient;

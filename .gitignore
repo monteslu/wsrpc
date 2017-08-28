@@ -1,16 +1,8 @@
+# Dependency directory
+# Deployed apps should consider commenting this line out:
+# see https://npmjs.org/doc/faq.html#Should-I-check-my-node_modules-folder-into-git
 node_modules
-bower_components
-lib-cov
-*.seed
-*.log
-*.csv
-*.dat
-*.out
-*.pid
-*.gz
 
-pids
-logs
-results
-
-npm-debug.log
+# Other
+.DS_Store
+coverage

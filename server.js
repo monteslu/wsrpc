@@ -1,72 +1,43 @@
-(function(define){
-  'use strict';
+var events = require('events');
 
-  define(function(require){
 
-    var whenfn = require('when/function');
+function createServer(options) {
+  var methodHandlers = {};
+  var sendEmitter = options.sendEmitter;
+  var sendTopic = options.sendTopic || 'rpcResult';
+  var receiveEmitter = options.receiveEmitter || sendEmitter;
+  var receiveTopic = options.receiveTopic || 'rpcCall';
 
-    function Rawr(server, funcs){
-      var sockets = server.sockets ? server.sockets : server;
 
-      this.functions = funcs || Rawr.prototype.functions;
-
-      var self = this;
-
-      sockets.on('connection', function (socket) {
-
-        // Generate the SMD and send it on connection
-        for(var func in self.functions){
-          self.smd.services[func] = {};
-        }
-        socket.send(JSON.stringify({smd: self.smd}));
-
-        // On rpc call, execute the function
-        socket.on('message', function(data){
-          function onSuccess(result){
-            socket.send(JSON.stringify({
-              result: result,
-              error: null,
-              id: data.id
-            }));
-          }
-
-          function onError(error){
-            error = error.message || error;
-            socket.send(JSON.stringify({
-              result: null,
-              error: error,
-              id: data.id
-            }));
-          }
-
-          data = JSON.parse(data);
-
-          if(self.functions[data.method]){
-            whenfn.apply(self.functions[data.method], data.params).then(onSuccess, onError);
-          } else {
-            onError('method undefined');
-          }
-
-        });
-
-      });
+  receiveEmitter.on(receiveTopic, function(msg) {
+    if(methodHandlers[msg.method]){
+      methodHandlers[msg.method](msg);
     }
-
-    Rawr.prototype.functions = {};
-
-    Rawr.prototype.smd = {
-      target:"/jsonrpc", // this defines the URL to connect for the services
-      transport:"POST", // We will use POST as the transport
-      envelope:"JSON-RPC-1.0", // We will use JSON-RPC
-      SMDVersion:"2.0",
-      services: {}
-    };
-
-    return Rawr;
-
   });
 
-}(
-  typeof define === 'function' && define.amd ? define : function (factory) { module.exports = factory(require); }
-  // Boilerplate for AMD and Node
-));
+  function addMethod(methodName, handler) {
+    methodHandlers[methodName] = function(msg) {
+      Promise.resolve()
+        .then(function() {
+          return handler.apply(this, msg.params || []);
+        })
+        .then(function(result) {
+          sendEmitter.emit(sendTopic, {
+            id: msg.id,
+            result: result
+          });
+        })
+        .catch(function(error) {
+          sendEmitter.emit(sendTopic, {
+            id: msg.id,
+            error: error
+          });
+        });
+    }
+  }
+
+  return { addMethod: addMethod };
+
+}
+
+module.exports = createServer;

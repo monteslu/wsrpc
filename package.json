@@ -1,15 +1,22 @@
 {
   "name": "rawr",
-  "version": "0.3.0",
-  "description": "JSON-RPC over WebSockets",
-  "main": "main.js",
+  "version": "0.4.0",
+  "description": "JSON-RPC over event emitters",
   "dependencies": {
-    "when": "^3.7.7"
+    "base64-url": "^2.0.0",
+    "uuid": "^3.1.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "chai": "^4.1.1",
+    "coveralls": "^2.13.1",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.5.0"
+  },
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "test": "istanbul cover _mocha && npm run check-coverage",
+    "check-coverage": "istanbul check-coverage --statements 100 --branches 75 --lines 100 --functions 100",
+    "coveralls": "cat ./coverage/lcov.info | ./node_modules/.bin/coveralls"
   },
   "repository": {
     "type": "git",
@@ -23,10 +30,9 @@
     "ws",
     "promise"
   ],
-  "author": "Blaine Bublitz <blaine@iceddev.com> (http://iceddev.com/)",
+  "author": "Luis Montes <luis@iceddev.com> (http://iceddev.com/)",
   "license": "MIT",
   "readmeFilename": "README.md",
-  "gitHead": "8980a386c203f47b2bba6a108ff968f2ec88ada6",
   "bugs": {
     "url": "https://github.com/iceddev/rawr/issues"
   }
