@@ -6,12 +6,21 @@ function createServer(options) {
   var methodHandlers = {};
   var notifications = new events.EventEmitter();
   var sendEmitter = options.sendEmitter;
-  var sendTopic = options.sendTopic || 'rpcResult';
+  var sendTopic = options.sendTopic;
+  if(!sendTopic && sendEmitter) {
+    sendTopic = sendEmitter.rawrTopic;
+  }
+  if(!sendTopic) {
+    sendTopic = 'rpcResult';
+  }
   var receiveEmitter = options.receiveEmitter || sendEmitter;
   var receiveTopic = options.receiveTopic || 'rpcCall';
 
 
   receiveEmitter.on(receiveTopic, function(msg) {
+    if(typeof msg === 'string') {
+      msg = JSON.parse(msg);
+    }
     if(msg.id) {
       if(methodHandlers[msg.method]){
         methodHandlers[msg.method](msg);

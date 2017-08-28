@@ -14,12 +14,21 @@ function createClient(options) {
   var pendingCalls = {};
   var notifications = new events.EventEmitter();
   var sendEmitter = options.sendEmitter;
-  var sendTopic = options.sendTopic || 'rpcCall';
+  var sendTopic = options.sendTopic;
+  if(!sendTopic && sendEmitter) {
+    sendTopic = sendEmitter.rawrTopic;
+  }
+  if(!sendTopic) {
+    sendTopic = 'rpcCall';
+  }
   var receiveEmitter = options.receiveEmitter || sendEmitter;
   var receiveTopic = options.receiveTopic || 'rpcResult';
   var timeout = options.timeout || 10000;
 
   receiveEmitter.on(receiveTopic, function(msg) {
+    if(typeof msg === 'string') {
+      msg = JSON.parse(msg);
+    }
     if(msg.id) {
       var promise = pendingCalls[msg.id];
       if(promise) {

@@ -105,6 +105,46 @@ describe('rawr', function(){
 
   });
 
+  it('client should make a successful rpc call to a server via ws send()', function(done){
+
+    var clientReceiveEE = new EventEmitter();
+    var serverReceiveEE = new EventEmitter();
+    var wsMockServer = {
+      send: function(data) {
+        clientReceiveEE.emit('message', data);
+      }
+    };
+    var wsMockClient= {
+      send: function(data) {
+        serverReceiveEE.emit('message', data);
+      }
+    };
+
+    var clientSendEE = rawr.createWsSender(wsMockClient);
+    var serverSendEE = rawr.createWsSender(wsMockServer);
+
+    var client = rawr.createClient({sendEmitter: clientSendEE, receiveEmitter: clientReceiveEE, receiveTopic: 'message'});
+    var server = rawr.createServer({sendEmitter: serverSendEE, receiveEmitter: serverReceiveEE, receiveTopic: 'message'});
+
+    server.addMethod('hello', helloTest);
+
+    client.rpc('hello', 'luis')
+      .then(function(result) {
+        result.should.equal('hello, luis');
+        server.notify('yo', 'dawg', 'now');
+      });
+
+    client.notifications.on('yo', function(who, when) {
+      who.should.equal('dawg');
+      when.should.equal('now');
+      done();
+    });
+
+
+
+
+  });
+
 
 
 });
