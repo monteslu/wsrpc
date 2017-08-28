@@ -1,8 +1,10 @@
 var events = require('events');
 
+var createNotifier = require('./notifier');
 
 function createServer(options) {
   var methodHandlers = {};
+  var notifications = new events.EventEmitter();
   var sendEmitter = options.sendEmitter;
   var sendTopic = options.sendTopic || 'rpcResult';
   var receiveEmitter = options.receiveEmitter || sendEmitter;
@@ -10,8 +12,13 @@ function createServer(options) {
 
 
   receiveEmitter.on(receiveTopic, function(msg) {
-    if(methodHandlers[msg.method]){
-      methodHandlers[msg.method](msg);
+    if(msg.id) {
+      if(methodHandlers[msg.method]){
+        methodHandlers[msg.method](msg);
+      }
+    } else {
+      msg.params.unshift(msg.method);
+      notifications.emit.apply(notifications, msg.params);
     }
   });
 
@@ -36,7 +43,9 @@ function createServer(options) {
     }
   }
 
-  return { addMethod: addMethod };
+  var notify = createNotifier(sendEmitter, sendTopic);
+
+  return { addMethod: addMethod, notifications: notifications, notify: notify };
 
 }
 

@@ -3,8 +3,6 @@
 var chai = require('chai');
 var EventEmitter = require('events').EventEmitter;
 
-
-var expect = chai.expect;
 chai.should();
 
 var rawr = require('../');
@@ -73,6 +71,37 @@ describe('rawr', function(){
       .catch(function(error) {
         done();
       });
+
+  });
+
+  it('client should be able to send a notification to a server', function(done){
+    var clientSendEE = new EventEmitter();
+    var serverSendEE = new EventEmitter();
+    var client = rawr.createClient({sendEmitter: clientSendEE});
+    var server = rawr.createServer({receiveEmitter: clientSendEE});
+
+    server.notifications.on('yo', function(who) {
+      who.should.equal('dawg');
+      done();
+    });
+
+    client.notify('yo', 'dawg');
+
+  });
+
+  it('server should be able to send a notification to a client', function(done){
+    var clientReceiveEE = new EventEmitter();
+    var serverSendEE = new EventEmitter();
+    var client = rawr.createClient({receiveEmitter: clientReceiveEE});
+    var server = rawr.createServer({sendEmitter: clientReceiveEE});
+
+    client.notifications.on('yo', function(who, when) {
+      who.should.equal('dawg');
+      when.should.equal('now');
+      done();
+    });
+
+    server.notify('yo', 'dawg', 'now');
 
   });
 

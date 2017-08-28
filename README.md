@@ -42,6 +42,8 @@ client.rpc('talk', 'luis')
 ## Making an RPC server
 
 ```javascript
+var createServer = require('rawr/server');
+
 var server = createServer({
   sendEmitter : anEventEmitter,
   sendTopic : 'rpcResponse', // the opposite of client
@@ -55,5 +57,33 @@ function talkToMe(name) {
 }
 
 server.addMethod('talk', talkToMe);
+
+```
+
+## Handling Notifications
+
+Both the client and server can send each other notifications
+
+From the server:
+```javascript
+
+client.notifications.on('yo', function(who) {
+  console.log(who); //prints 'dawg'
+});
+
+server.notify('yo', 'dawg');
+
+```
+
+OR
+
+From the client:
+```javascript
+
+server.notifications.on('yo', function(who) {
+  console.log(who); //prints 'dawg'
+});
+
+client.notify('yo', 'dawg');
 
 ```
