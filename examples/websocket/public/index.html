@@ -1,0 +1,32 @@
+<html>
+  <head>
+    <script src="bundle.js"></script>
+  </head>
+  <body>
+    <input id="number1" type="number" value="1"> + <input id="number2" type="number" value="2"> = <span id="result"></span>
+    <button id="addBtn">send</button>
+    <script>
+      var host = window.document.location.host.replace(/:.*/, '');
+      var ws = new WebSocket('ws://' + host + ':8080');
+
+      ws.onopen = function (event) {
+        var client = window.rawrClient = rawr.init({
+          sendEmitter: rawr.createWsSender(ws),
+          receiveEmitter: rawr.createWsReceiver(ws)
+        });
+
+        document.getElementById('addBtn').addEventListener('click', function() {
+          var num1 = parseFloat(document.getElementById('number1').value, 10);
+          var num2 = parseFloat(document.getElementById('number2').value, 10);
+          client.rpc('add', num1, num2)
+            .then(function(result) {
+              document.getElementById('result').innerHTML = result;
+            })
+        }, false);
+
+
+      };
+
+    </script>
+  </body>
+</html>
