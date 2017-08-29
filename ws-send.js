@@ -1,13 +1,13 @@
 var events = require('events');
 
-function createSender(ws, topic) {
-  topic = topic || 'sendTopic';
+function createSender(ws, sendObjects) {
+  var topic = 'rpcSend';
   var ee = new events.EventEmitter();
   ee.on(topic, function(msg) {
-    if(typeof msg === 'object'){
+    if(typeof msg === 'object' && !sendObjects){
       msg = JSON.stringify(msg);
-      ws.send(msg);
     }
+    ws.send(msg);
   });
   ee.rawrTopic = topic;
   return ee;

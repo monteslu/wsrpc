@@ -1,9 +1,9 @@
-var createClient = require('./client');
-var createServer = require('./server');
+var createPeer = require('./client');
 var createWsSender = require('./ws-send');
+var createWsReceiver = require('./ws-receive');
 
 module.exports = {
-  createClient: createClient,
-  createServer: createServer,
-  createWsSender: createWsSender
+  init: createPeer,
+  createWsSender: createWsSender,
+  createWsReceiver: createWsReceiver
 };

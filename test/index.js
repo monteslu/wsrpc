@@ -14,29 +14,56 @@ function helloTest(name) {
   return 'hello, ' + name;
 }
 
+function mockSockets() {
+  var clientEE = new EventEmitter();
+  var serverEE = new EventEmitter();
+
+  var client = {
+    send: function(data) {
+      serverEE.emit('message', data);
+    }
+  };
+  var server = {
+    send: function(data) {
+      clientEE.emit('message', data);
+    }
+  };
+
+  serverEE.on('message', function(data) {
+    if(server.onmessage) {
+      server.onmessage({data: data});
+    }
+  });
+
+  clientEE.on('message', function(data) {
+    if(client.onmessage) {
+      client.onmessage({data: data});
+    }
+  });
+
+  return {
+    client: client,
+    server: server
+  };
+}
+
 describe('rawr', function(){
 
   it('should make a client', function(done){
     var sendEE = new EventEmitter();
-    var client = rawr.createClient({sendEmitter: sendEE});
+    var client = rawr.init({sendEmitter: sendEE});
     client.should.be.a('object');
     client.rpc.should.be.a('function');
+    client.addMethod.should.be.a('function');
     done();
   });
 
-  it('should make a server', function(done){
-    var sendEE = new EventEmitter();
-    var server = rawr.createServer({sendEmitter: sendEE});
-    server.should.be.a('object');
-    server.addMethod.should.be.a('function');
-    done();
-  });
 
   it('client should make a successful rpc call to a server', function(done){
     var clientSendEE = new EventEmitter();
     var serverSendEE = new EventEmitter();
-    var client = rawr.createClient({sendEmitter: clientSendEE, receiveEmitter: serverSendEE});
-    var server = rawr.createServer({sendEmitter: serverSendEE, receiveEmitter: clientSendEE});
+    var client = rawr.init({sendEmitter: clientSendEE, receiveEmitter: serverSendEE});
+    var server = rawr.init({sendEmitter: serverSendEE, receiveEmitter: clientSendEE});
 
     server.addMethod('hello', helloTest);
 
@@ -51,8 +78,8 @@ describe('rawr', function(){
   it('client should make an unsuccessful rpc call to a server', function(done){
     var clientSendEE = new EventEmitter();
     var serverSendEE = new EventEmitter();
-    var client = rawr.createClient({sendEmitter: clientSendEE, receiveEmitter: serverSendEE});
-    var server = rawr.createServer({sendEmitter: serverSendEE, receiveEmitter: clientSendEE});
+    var client = rawr.init({sendEmitter: clientSendEE, receiveEmitter: serverSendEE});
+    var server = rawr.init({sendEmitter: serverSendEE, receiveEmitter: clientSendEE});
 
     server.addMethod('hello', helloTest);
 
@@ -65,7 +92,7 @@ describe('rawr', function(){
 
   it('client handle an rpc timeout', function(done){
     var clientSendEE = new EventEmitter();
-    var client = rawr.createClient({sendEmitter: clientSendEE, timeout: 100});
+    var client = rawr.init({sendEmitter: clientSendEE, timeout: 100});
 
     client.rpc('hello', 'bad')
       .catch(function(error) {
@@ -75,56 +102,31 @@ describe('rawr', function(){
   });
 
   it('client should be able to send a notification to a server', function(done){
-    var clientSendEE = new EventEmitter();
-    var serverSendEE = new EventEmitter();
-    var client = rawr.createClient({sendEmitter: clientSendEE});
-    var server = rawr.createServer({receiveEmitter: clientSendEE});
+    var sendEE = new EventEmitter();
+    var client = rawr.init({sendEmitter: sendEE});
+    var server = rawr.init({receiveEmitter: sendEE});
 
-    server.notifications.on('yo', function(who) {
-      who.should.equal('dawg');
-      done();
-    });
-
-    client.notify('yo', 'dawg');
-
-  });
-
-  it('server should be able to send a notification to a client', function(done){
-    var clientReceiveEE = new EventEmitter();
-    var serverSendEE = new EventEmitter();
-    var client = rawr.createClient({receiveEmitter: clientReceiveEE});
-    var server = rawr.createServer({sendEmitter: clientReceiveEE});
-
-    client.notifications.on('yo', function(who, when) {
+    server.notifications.on('yo', function(who, when) {
       who.should.equal('dawg');
       when.should.equal('now');
       done();
     });
 
-    server.notify('yo', 'dawg', 'now');
+    client.notify('yo', 'dawg', 'now');
 
   });
 
+
+
   it('client should make a successful rpc call to a server via ws send()', function(done){
 
-    var clientReceiveEE = new EventEmitter();
-    var serverReceiveEE = new EventEmitter();
-    var wsMockServer = {
-      send: function(data) {
-        clientReceiveEE.emit('message', data);
-      }
-    };
-    var wsMockClient= {
-      send: function(data) {
-        serverReceiveEE.emit('message', data);
-      }
-    };
+    var mocks = mockSockets();
 
-    var clientSendEE = rawr.createWsSender(wsMockClient);
-    var serverSendEE = rawr.createWsSender(wsMockServer);
+    var clientWS = mocks.client;
+    var serverWS = mocks.server;
 
-    var client = rawr.createClient({sendEmitter: clientSendEE, receiveEmitter: clientReceiveEE, receiveTopic: 'message'});
-    var server = rawr.createServer({sendEmitter: serverSendEE, receiveEmitter: serverReceiveEE, receiveTopic: 'message'});
+    var client = rawr.init({sendEmitter: rawr.createWsSender(clientWS), receiveEmitter: rawr.createWsReceiver(clientWS)});
+    var server = rawr.init({sendEmitter: rawr.createWsSender(serverWS), receiveEmitter: rawr.createWsReceiver(serverWS)});
 
     server.addMethod('hello', helloTest);
 

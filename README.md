@@ -17,12 +17,15 @@ Remote Procedure Calls ([JSON-RPC](http://json-rpc.org/wiki/specification)) sent
 
 `npm install rawr`
 
+
 ## Using the RPC client
 
-```javascript
-var createClient = require('rawr/client');
+Every rawr client can act as both a client and a server
 
-var client = createClient({
+```javascript
+var rawr = require('rawr');
+
+var client = rawr.init({
   sendEmitter : anEventEmitter,
   sendTopic : 'rpcCall',
   receiveEmitter : anEventEmitter,
@@ -39,12 +42,12 @@ client.rpc('talk', 'luis')
 ```
 
 
-## Making an RPC server
+## A rawr instance acting as an RPC server
 
 ```javascript
-var createServer = require('rawr/server');
+var rawr = require('rawr');
 
-var server = createServer({
+var server = rawr.init({
   sendEmitter : anEventEmitter,
   sendTopic : 'rpcResponse', // the opposite of client
   receiveEmitter : anEventEmitter,
@@ -62,9 +65,8 @@ server.addMethod('talk', talkToMe);
 
 ## Handling Notifications
 
-Both the client and server can send each other notifications
+Both the client and server can send each other notifications:
 
-From the server:
 ```javascript
 
 client.notifications.on('yo', function(who) {
@@ -72,18 +74,5 @@ client.notifications.on('yo', function(who) {
 });
 
 server.notify('yo', 'dawg');
-
-```
-
-OR
-
-From the client:
-```javascript
-
-server.notifications.on('yo', function(who) {
-  console.log(who); //prints 'dawg'
-});
-
-client.notify('yo', 'dawg');
 
 ```
