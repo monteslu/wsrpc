@@ -2,11 +2,14 @@
 
 [![NPM](https://nodei.co/npm/rawr.png?compact=true)](https://nodei.co/npm/rawr/)
 
-[![Build Status](https://travis-ci.org/iceddev/rawr.svg?branch=master)](https://travis-ci.org/iceddev/rawr) [![Coverage Status](https://coveralls.io/repos/iceddev/rawr/badge.svg?branch=master)](https://coveralls.io/r/iceddev/rawr?branch=master)
+
+[![CircleCI](https://circleci.com/gh/iceddev/rawr.svg?style=svg)](https://circleci.com/gh/iceddev/rawr)
+
+[![Coverage Status](https://coveralls.io/repos/iceddev/rawr/badge.svg?branch=master)](https://coveralls.io/r/iceddev/rawr?branch=master)
 
 
 
-Remote Procedure Calls ([JSON-RPC](http://json-rpc.org/wiki/specification)) sent over any [EventEmitter](https://nodejs.org/dist/latest-v8.x/docs/api/events.html#events_class_eventemitter) transport.
+Remote Procedure Calls ([JSON-RPC](http://json-rpc.org/wiki/specification)) sent over any [EventEmitter](https://nodejs.org/dist/latest-v8.x/docs/api/events.html#events_class_eventemitter)-based transport.  [WebWorkers](/transports/worker), [WebSockets](/transports/websocket), [MQTT](/transports/mqtt), and more!
 
 ![RAWRpc](https://rawgithub.com/phated/badart/master/reptar_rawr.jpg)
 
@@ -20,59 +23,68 @@ Remote Procedure Calls ([JSON-RPC](http://json-rpc.org/wiki/specification)) sent
 
 ## Using the RPC client
 
-Every rawr client can act as both a client and a server
+Every rawr client can act as both a client and a server, and make RPC calls in either direction.
 
+For example, if we want to use rawr to make calls to a webworker:
 ```javascript
-var rawr = require('rawr');
+import rawr from 'rawr';
+import { dom } from 'rawr/tansports/worker';
 
-var client = rawr.init({
-  sendEmitter : anEventEmitter,
-  sendTopic : 'rpcCall',
-  receiveEmitter : anEventEmitter,
-  receiveTopic : 'rpcResponse',
-  timeout: 5000 // timeout the call after 5 seconds, default is 10
-});
+const myWorker = new Worker('/my-worker.js');
 
-// call an rpc method with a parameter and get a promise:
-client.rpc('talk', 'luis')
-  .then(function(result) {
-    console.log(result); // prints 'hello, luis'
-  });
+const peer = rawr({transport: dom(myWorker)});
 
+const result = await peer.methods.doSomething('lots of data');
 ```
 
-
-## A rawr instance acting as an RPC server
-
+Our WebWorker code might look something like:
 ```javascript
-var rawr = require('rawr');
+import rawr from 'rawr';
+import { worker } from 'rawr/tansports/worker';
 
-var server = rawr.init({
-  sendEmitter : anEventEmitter,
-  sendTopic : 'rpcResponse', // the opposite of client
-  receiveEmitter : anEventEmitter,
-  receiveTopic : 'rpcCall' // the opposite of the client
-});
+const peer = rawr({transport: worker(), handlers: {doSomething}});
 
-function talkToMe(name) {
-  // could return a value, a promise, or throw an error
-  return 'hello, ' + name;
+function doSomething(inputData) {
+  // do some heavy lifting in this thread
+  // return a result
 }
+```
 
-server.addMethod('talk', talkToMe);
+We could even to this type of call to a remote server such as a websocket.
+Simply use a differnt transport:
+```javascript
+import rawr from 'rawr';
+import wsTransport from 'rawr/tansports/websocket';
 
+const ws = new WebSocket('ws://localhost:8080');
+
+ws.onopen = (event) => {
+  // create the rawr peer
+  const peer = rawr({transport: wsTransport(ws)});
+};
+```
+
+The websocket server could even make arbitrary calls to the client!
+```javascript
+socketServer.on('connection', (socket) => {
+  const peer = rawr({ transport: wsTransport(socket) })
+
+  const val = await peer.methods.doSomethingOnClient();
+  
+});
 ```
 
 ## Handling Notifications
 
-Both the client and server can send each other notifications:
+Peers can also send each other notifications:
 
 ```javascript
+peer.notifiers.saySomething('hello');
+```
 
-client.notifications.on('yo', function(who) {
-  console.log(who); //prints 'dawg'
+Receiving those notifications is just as simple:
+```javascript
+peer.onNotification('saySomething', (words) => {
+  console.log(words); //hellow
 });
-
-server.notify('yo', 'dawg');
-
 ```

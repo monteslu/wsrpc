@@ -1,152 +1,126 @@
-'use strict';
-
-var chai = require('chai');
-var EventEmitter = require('events').EventEmitter;
+const chai = require('chai');
+const expect = chai.expect;
+const EventEmitter = require('events').EventEmitter;
 
 chai.should();
 
-var rawr = require('../');
+const rawr = require('../');
+
+
+function createTransports() {
+  const a = new EventEmitter();
+  const b =  new EventEmitter();
+
+  a.on('message', (msg) => {
+    a.emit('rpc', msg);
+  });
+  a.send = (msg) => {
+    b.emit('message', msg);
+  }
+
+  b.on('message', (msg) => {
+    b.emit('rpc', msg);
+  });
+  b.send = (msg) => {
+    a.emit('message', msg);
+  }
+
+  return {a, b};
+}
+
 
 function helloTest(name) {
-  if(name === 'bad') {
-    throw new Error('bad name !');
-  }
-  return 'hello, ' + name;
+  return new Promise((resolve, reject) => {
+    if(name === 'bad') {
+      const error = new Error('bad name !');
+      error.code = 9000;
+      return reject(error);
+    }
+    setTimeout(() => {
+      return resolve(`hello, ${name}`)
+    }, 100);
+  });
 }
 
-function mockSockets() {
-  var clientEE = new EventEmitter();
-  var serverEE = new EventEmitter();
-
-  var client = {
-    send: function(data) {
-      serverEE.emit('message', data);
-    }
-  };
-  var server = {
-    send: function(data) {
-      clientEE.emit('message', data);
-    }
-  };
-
-  serverEE.on('message', function(data) {
-    if(server.onmessage) {
-      server.onmessage({data: data});
-    }
-  });
-
-  clientEE.on('message', function(data) {
-    if(client.onmessage) {
-      client.onmessage({data: data});
-    }
-  });
-
-  return {
-    client: client,
-    server: server
-  };
+function add(a, b) {
+  return a + b;
 }
+
+function subtract(a, b) {
+  return a - b;
+}
+
 
 describe('rawr', function(){
 
   it('should make a client', function(done){
-    var sendEE = new EventEmitter();
-    var client = rawr.init({sendEmitter: sendEE});
+    const client = rawr({transport: createTransports().a});
     client.should.be.a('object');
-    client.rpc.should.be.a('function');
-    client.addMethod.should.be.a('function');
+    client.addHandler.should.be.a('function');
     done();
   });
 
 
-  it('client should make a successful rpc call to a server', function(done){
-    var clientSendEE = new EventEmitter();
-    var serverSendEE = new EventEmitter();
-    var client = rawr.init({sendEmitter: clientSendEE, receiveEmitter: serverSendEE});
-    var server = rawr.init({sendEmitter: serverSendEE, receiveEmitter: clientSendEE});
+  it('client should make a successful rpc call to another peer', async () => {
+    const { a, b } = createTransports();
+    const clientA = rawr({ transport: a, handlers: {add} });
+    const clientB = rawr({ transport: b, handlers: {subtract} });
 
-    server.addMethod('hello', helloTest);
+    const resultA = await clientA.methods.subtract(7, 2);
+    const resultB = await clientB.methods.add(1, 2);
+    resultA.should.equal(5);
+    resultB.should.equal(3);
+  });
 
-    client.rpc('hello', 'luis')
-      .then(function(result) {
-        result.should.equal('hello, luis');
-        done();
-      });
+  it('client should make an unsuccessful rpc call to a peer', async () => {
+    const { a, b } = createTransports();
+    const clientA = rawr({ transport: a, handlers: {helloTest} });
+    const clientB = rawr({ transport: b });
+    try {
+      await clientB.methods.helloTest('bad');
+    } catch (error) {
+      errorMessage = error.message;
+      error.code.should.equal(9000)
+    }
 
   });
 
-  it('client should make an unsuccessful rpc call to a server', function(done){
-    var clientSendEE = new EventEmitter();
-    var serverSendEE = new EventEmitter();
-    var client = rawr.init({sendEmitter: clientSendEE, receiveEmitter: serverSendEE});
-    var server = rawr.init({sendEmitter: serverSendEE, receiveEmitter: clientSendEE});
-
-    server.addMethod('hello', helloTest);
-
-    client.rpc('hello', 'bad')
-      .catch(function(error) {
-        done();
-      });
+  it('client handle an rpc under a specified timeout', async () => {
+    const { a, b } = createTransports();
+    const clientA = rawr({ transport: a, handlers: {helloTest} });
+    const clientB = rawr({ transport: b, timeout: 1000 });
+    
+    const result = await clientB.methods.helloTest('luis');
+    result.should.equal('hello, luis');
 
   });
 
-  it('client handle an rpc timeout', function(done){
-    var clientSendEE = new EventEmitter();
-    var client = rawr.init({sendEmitter: clientSendEE, timeout: 100});
-
-    client.rpc('hello', 'bad')
-      .catch(function(error) {
-        done();
-      });
+  it('client handle an rpc timeout', async () => {
+    const { a, b } = createTransports();
+    const clientA = rawr({ transport: a, handlers: {helloTest} });
+    const clientB = rawr({ transport: b, timeout: 10 });
+    let errorMessage;
+    try {
+      await clientB.methods.helloTest('luis');
+    } catch (error) {
+      errorMessage = error.message;
+      error.code.should.equal(504);
+    }
 
   });
 
-  it('client should be able to send a notification to a server', function(done){
-    var sendEE = new EventEmitter();
-    var client = rawr.init({sendEmitter: sendEE});
-    var server = rawr.init({receiveEmitter: sendEE});
+  it('client should be able to send a notification to a server', (done) => {
+    const { a, b } = createTransports();
+    const clientA = rawr({ transport: a });
+    const clientB = rawr({ transport: b });
 
-    server.notifications.on('yo', function(who, when) {
-      who.should.equal('dawg');
-      when.should.equal('now');
+    clientA.onNotification('doSomething', (a) => {
+      a.should.equal('testing_notification')
       done();
     });
 
-    client.notify('yo', 'dawg', 'now');
+    clientB.notifiers.doSomething('testing_notification');
 
   });
-
-
-
-  it('client should make a successful rpc call to a server via ws send()', function(done){
-
-    var mocks = mockSockets();
-
-    var clientWS = mocks.client;
-    var serverWS = mocks.server;
-
-    var client = rawr.init({sendEmitter: rawr.createWsSender(clientWS), receiveEmitter: rawr.createWsReceiver(clientWS)});
-    var server = rawr.init({sendEmitter: rawr.createWsSender(serverWS), receiveEmitter: rawr.createWsReceiver(serverWS)});
-
-    server.addMethod('hello', helloTest);
-
-    client.rpc('hello', 'luis')
-      .then(function(result) {
-        result.should.equal('hello, luis');
-        server.notify('yo', 'dawg', 'now');
-      });
-
-    client.notifications.on('yo', function(who, when) {
-      who.should.equal('dawg');
-      when.should.equal('now');
-      done();
-    });
-
-
-
-
-  });
-
-
 
 });

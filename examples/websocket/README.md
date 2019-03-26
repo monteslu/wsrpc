@@ -7,7 +7,7 @@
 
 ## start
 
-`node index`
+`npm run start`
 
 ## open browser
 

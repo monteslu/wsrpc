@@ -1,1 +1,0 @@
-window.rawr = require('rawr');
