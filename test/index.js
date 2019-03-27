@@ -114,7 +114,7 @@ describe('rawr', function(){
     const clientA = rawr({ transport: a });
     const clientB = rawr({ transport: b });
 
-    clientA.onNotification('doSomething', (a) => {
+    clientA.notifications.ondoSomething((a) => {
       a.should.equal('testing_notification')
       done();
     });

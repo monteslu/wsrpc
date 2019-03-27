@@ -115,7 +115,17 @@ function rawr({ transport, timeout = 0, handlers = {} }) {
     }
   });
 
-  return { methods, addHandler, onNotification: notificationEvents.on, notifiers };
+  const notifications = new Proxy({}, {
+    get: function(target, name) {
+      return function (callback) {
+        notificationEvents.on(name.substring(2), function(...args) {
+          return callback.apply(callback, args);
+        });
+      }
+    }
+  });
+
+  return { methods, addHandler, notifications, notifiers };
 
 }
 

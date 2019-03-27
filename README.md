@@ -21,7 +21,7 @@ Remote Procedure Calls ([JSON-RPC](http://json-rpc.org/wiki/specification)) sent
 `npm install rawr`
 
 
-## Using the RPC client
+## Using rawr with a webworker
 
 Every rawr client can act as both a client and a server, and make RPC calls in either direction.
 
@@ -49,6 +49,8 @@ function doSomething(inputData) {
   // return a result
 }
 ```
+
+## Using rawr with a websocket
 
 We could even to this type of call to a remote server such as a websocket.
 Simply use a differnt transport:
@@ -82,10 +84,10 @@ Peers can also send each other notifications:
 peer.notifiers.saySomething('hello');
 ```
 
-Receiving those notifications is just as simple:
+Receiving those notifications from another peer is just as simple:
 ```javascript
-peer.onNotification('saySomething', (words) => {
-  console.log(words); //hellow
+peer.notifications.onsaySomething((words) => {
+  console.log(words); //hello
 });
 ```
 
