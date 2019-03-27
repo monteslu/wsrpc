@@ -1,0 +1,17 @@
+{
+  "name": "rawr-webworker-example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "browserify main.js -o public/main-bundle.js && browserify worker.js -o public/worker-bundle.js",
+    "start": "npm run build && ecstatic ./public --port 8081"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "browserify": "^14.4.0",
+    "ecstatic": "^3.3.1"
+  }
+}

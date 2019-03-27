@@ -3,8 +3,9 @@ const { EventEmitter } = require('events');
 function dom(webWorker) {
   const emitter = new EventEmitter();
   webWorker.addEventListener('message', function(msg) {
-    if(msg.data && msg.data.method) {
-      emitter.emit('rpc', msg.data);
+    const { data } = msg;
+    if(data && (data.method || ((data.id && data.hasOwnProperty('result')) ))) {
+      emitter.emit('rpc', data);
     }
   });
   emitter.send = function(msg) {
@@ -16,8 +17,9 @@ function dom(webWorker) {
 function worker() {
   const emitter = new EventEmitter();
   self.onmessage = function (msg) {
-    if(msg.data && msg.data.method) {
-      emitter.emit('rpc', msg.data);
+    const { data } = msg;
+    if(data && (data.method || ((data.id && data.hasOwnProperty('result')) ))) {
+      emitter.emit('rpc', data);
     }
   };
   emitter.send = function(msg) {

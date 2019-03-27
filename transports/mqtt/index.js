@@ -9,7 +9,7 @@ function adapter({connection, subTopic, pubTopic, subscribe = true}) {
     if(topic === subTopic) {
       try {
         const msg = JSON.parse(message.toString());
-        if(msg.method) {
+        if(msg.method || (msg.id && msg.hasOwnProperty('result'))) {
           emitter.emit('rpc', msg);
         }
       } catch(err) {
