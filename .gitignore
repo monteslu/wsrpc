@@ -1,14 +1,9 @@
-lib-cov
-*.seed
-*.log
-*.csv
-*.dat
-*.out
-*.pid
-*.gz
+# Dependency directory
+# Deployed apps should consider commenting this line out:
+# see https://npmjs.org/doc/faq.html#Should-I-check-my-node_modules-folder-into-git
+node_modules
+package-lock.json
 
-pids
-logs
-results
-
-npm-debug.log
+# Other
+.DS_Store
+coverage

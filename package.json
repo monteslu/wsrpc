@@ -1,0 +1,38 @@
+{
+  "name": "rawr",
+  "version": "0.8.0",
+  "description": "JSON-RPC over simple event emitters",
+  "dependencies": {
+    "coveralls": "^3.0.3"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "istanbul": "^0.4.5",
+    "mocha": "^6.0.2"
+  },
+  "main": "index.js",
+  "scripts": {
+    "test": "istanbul cover _mocha && npm run check-coverage",
+    "check-coverage": "istanbul check-coverage --statements 100 --branches 75 --lines 100 --functions 100",
+    "coveralls": "cat ./coverage/lcov.info | ./node_modules/.bin/coveralls"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/iceddev/rawr"
+  },
+  "keywords": [
+    "rpc",
+    "json-rpc",
+    "promises",
+    "websocket",
+    "ws",
+    "promise",
+    "mqtt"
+  ],
+  "author": "Luis Montes <luis@iceddev.com> (http://iceddev.com/)",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/iceddev/rawr/issues"
+  }
+}
